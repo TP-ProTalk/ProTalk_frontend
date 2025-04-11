@@ -1,0 +1,25 @@
+# Игнорируем папки и файлы, созданные Flutter
+.build/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+pubspec.lock
+
+# Игнорируем собранные файлы и каталоги
+ios/Pods/
+ios/.symlinks/
+ios/Flutter/.last_build_id
+android/.gradle/
+android/app/build/
+android/.idea/
+
+# Игнорируем логи
+*.log
+
+# Игнорируем конфигурационные файлы IDE (например, VS Code, Android Studio)
+.vscode/
+.idea/
+
+# Игнорируем временные файлы, созданные редакторами и системой
+*.swp
+*.bak
