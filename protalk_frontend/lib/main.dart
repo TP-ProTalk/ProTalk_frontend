@@ -135,9 +135,7 @@ class _Screen1State extends State<Screen1> {
               ElevatedButton(
                 onPressed: () {
                   if (_formKey.currentState!.validate()) {
-                    ScaffoldMessenger.of(context).showSnackBar( 
-                      const SnackBar(content: Text('Регистрация успешна')),   
-                    );
+                    Navigator.pushNamed(context, '/test'); // Переход на экран Test
                   }
                 },
                 style: ElevatedButton.styleFrom(
@@ -237,9 +235,7 @@ class _Screen2State extends State<Screen2> {
               ElevatedButton(
                 onPressed: () {
                   if (_formKey.currentState!.validate()) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Вход выполнен успешно')),
-                    );
+                    Navigator.pushNamed(context, '/test'); // Переход на экран Test
                   }
                 },
                 style: ElevatedButton.styleFrom(
@@ -334,14 +330,6 @@ class _SplashWithLogoState extends State<SplashWithLogo> {
                       padding: const EdgeInsets.symmetric(horizontal: 160, vertical: 30),
                     ),
                     child: const Text('Вход'),
-                  ),
-                  const SizedBox(height: 20),
-                  ElevatedButton(
-                    onPressed: () => Navigator.pushNamed(context, '/test'),
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 160, vertical: 30),
-                    ),
-                    child: const Text('Тест'),
                   ),
                 ],
               ),
