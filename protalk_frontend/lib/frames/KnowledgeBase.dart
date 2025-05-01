@@ -1,24 +1,28 @@
 import 'package:flutter/material.dart';
-import 'knowledgebase.dart';
-import 'user_screen.dart';
-import 'HistoryScreen.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(const Knowledgebase());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class Knowledgebase extends StatelessWidget {
+  const Knowledgebase({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'ProTalk Mode Selection',
+      title: 'База знаний',
       theme: ThemeData(
         primarySwatch: Colors.blue,
         scaffoldBackgroundColor: const Color(0xFFD9CCB7),
       ),
-      home: const ModeSelectionScreen(),
+      home: Scaffold(
+        appBar: AppBar(
+          title: const Text('База знаний', style: TextStyle(fontSize: 24)),
+          backgroundColor: Colors.black45,
+          centerTitle: true,
+        ),
+        body: const ModeSelectionScreen(),
+      ),
     );
   }
 }
@@ -31,72 +35,6 @@ class ModeSelectionScreen extends StatefulWidget {
 }
 
 class _ModeSelectionScreenState extends State<ModeSelectionScreen> {
-  int _currentIndex = 0;
-  
-  final List<Widget> _pages = [
-    const Knowledgebase(), // Полноценный экран из knowledgebase.dart
-    const ModeContentScreen(),
-    const Placeholder(),
-    const HistoryScreen(),
-    const UserScreen(),
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFD9CCB7),
-      appBar: AppBar(
-        title: const Text('Тест', style: TextStyle(fontSize: 24)),
-        backgroundColor: Colors.black45,
-        centerTitle: true,
-      ),
-      body: _pages[_currentIndex],
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        onTap: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
-        },
-        backgroundColor: Colors.black45,
-        selectedItemColor: Colors.white,
-        unselectedItemColor: Colors.grey,
-        type: BottomNavigationBarType.fixed,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.book),
-            label: 'Б',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.list),
-            label: 'Т',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.settings),
-            label: 'С',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.info),
-            label: 'И',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: 'П',
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class ModeContentScreen extends StatefulWidget {
-  const ModeContentScreen({super.key});
-
-  @override
-  State<ModeContentScreen> createState() => _ModeContentScreenState();
-}
-
-class _ModeContentScreenState extends State<ModeContentScreen> {
   bool _softSelected = false;
   bool _hardSelected = false;
   String? _selectedMode;
@@ -129,16 +67,16 @@ class _ModeContentScreenState extends State<ModeContentScreen> {
     });
   }
 
-  void _navigateToQuestionScreen(int questionNumber) {
+  void _navigateToArticleScreen(int articleNumber) {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => QuestionScreen(
+        builder: (context) => ArticleScreen(
           mode: _selectedMode!,
           theme: _softSelected 
               ? _softThemes[_selectedTheme!] 
               : _hardThemes[_selectedTheme!],
-          questionNumber: questionNumber,
+          articleNumber: articleNumber,
         ),
       ),
     );
@@ -149,6 +87,7 @@ class _ModeContentScreenState extends State<ModeContentScreen> {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
+        // Кнопка Soft
         Container(
           margin: const EdgeInsets.symmetric(horizontal: 40, vertical: 10),
           child: ElevatedButton(
@@ -169,6 +108,8 @@ class _ModeContentScreenState extends State<ModeContentScreen> {
             ),
           ),
         ),
+
+        // Кнопка Hard
         Container(
           margin: const EdgeInsets.symmetric(horizontal: 40, vertical: 10),
           child: ElevatedButton(
@@ -189,7 +130,10 @@ class _ModeContentScreenState extends State<ModeContentScreen> {
             ),
           ),
         ),
+
         const SizedBox(height: 30),
+
+        // Темы (появляются после выбора режима)
         if (_softSelected || _hardSelected)
           Expanded(
             child: SingleChildScrollView(
@@ -199,6 +143,7 @@ class _ModeContentScreenState extends State<ModeContentScreen> {
                   final theme = entry.value;
                   return Column(
                     children: [
+                      // Кнопка темы
                       Container(
                         margin: const EdgeInsets.symmetric(horizontal: 50, vertical: 5),
                         child: ElevatedButton(
@@ -221,13 +166,15 @@ class _ModeContentScreenState extends State<ModeContentScreen> {
                           ),
                         ),
                       ),
+
+                      // Статьи для выбранной темы
                       if (_selectedTheme == index)
                         Column(
                           children: [
                             Container(
                               margin: const EdgeInsets.symmetric(horizontal: 70, vertical: 5),
                               child: ElevatedButton(
-                                onPressed: () => _navigateToQuestionScreen(1),
+                                onPressed: () => _navigateToArticleScreen(1),
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: Colors.grey[700],
                                   minimumSize: const Size(double.infinity, 40),
@@ -236,7 +183,7 @@ class _ModeContentScreenState extends State<ModeContentScreen> {
                                   ),
                                 ),
                                 child: const Text(
-                                  'Вопрос 1',
+                                  'Статья 1',
                                   style: TextStyle(fontSize: 16, color: Colors.white),
                                 ),
                               ),
@@ -244,7 +191,7 @@ class _ModeContentScreenState extends State<ModeContentScreen> {
                             Container(
                               margin: const EdgeInsets.symmetric(horizontal: 70, vertical: 5),
                               child: ElevatedButton(
-                                onPressed: () => _navigateToQuestionScreen(2),
+                                onPressed: () => _navigateToArticleScreen(2),
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: Colors.grey[700],
                                   minimumSize: const Size(double.infinity, 40),
@@ -253,7 +200,7 @@ class _ModeContentScreenState extends State<ModeContentScreen> {
                                   ),
                                 ),
                                 child: const Text(
-                                  'Вопрос 2',
+                                  'Статья 2',
                                   style: TextStyle(fontSize: 16, color: Colors.white),
                                 ),
                               ),
@@ -261,7 +208,7 @@ class _ModeContentScreenState extends State<ModeContentScreen> {
                             Container(
                               margin: const EdgeInsets.symmetric(horizontal: 70, vertical: 5),
                               child: ElevatedButton(
-                                onPressed: () => _navigateToQuestionScreen(3),
+                                onPressed: () => _navigateToArticleScreen(3),
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: Colors.grey[700],
                                   minimumSize: const Size(double.infinity, 40),
@@ -270,7 +217,7 @@ class _ModeContentScreenState extends State<ModeContentScreen> {
                                   ),
                                 ),
                                 child: const Text(
-                                  'Вопрос 3',
+                                  'Статья 3',
                                   style: TextStyle(fontSize: 16, color: Colors.white),
                                 ),
                               ),
@@ -288,29 +235,28 @@ class _ModeContentScreenState extends State<ModeContentScreen> {
   }
 }
 
-class QuestionScreen extends StatelessWidget {
+class ArticleScreen extends StatelessWidget {
   final String mode;
   final String theme;
-  final int questionNumber;
+  final int articleNumber;
 
-  const QuestionScreen({
+  const ArticleScreen({
     super.key,
     required this.mode,
     required this.theme,
-    required this.questionNumber,
+    required this.articleNumber,
   });
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFD9CCB7),
       appBar: AppBar(
-        title: Text('$mode - $theme - Вопрос $questionNumber'),
+        title: Text('$mode - $theme - Статья $articleNumber'),
         backgroundColor: Colors.black45,
       ),
       body: Center(
         child: Text(
-          'Это экран вопроса $questionNumber в теме "$theme" режима $mode',
+          'Это экран статьи $articleNumber в теме "$theme" режима $mode',
           style: const TextStyle(color: Colors.white, fontSize: 24),
           textAlign: TextAlign.center,
         ),
