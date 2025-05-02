@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:protalk_frontend/frames/Test.dart';
-import 'package:protalk_frontend/flutter/examples/api/lib/widgets/navigator/navigator.0.dart';
 
 void main() {
   runApp(const MyApp());
@@ -8,7 +7,7 @@ void main() {
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
-  
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -35,7 +34,8 @@ class _Screen1State extends State<Screen1> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _emailPhoneController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _confirmPasswordController = TextEditingController();
+  final TextEditingController _confirmPasswordController =
+      TextEditingController();
 
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
@@ -83,7 +83,9 @@ class _Screen1State extends State<Screen1> {
                   border: const OutlineInputBorder(),
                   suffixIcon: IconButton(
                     icon: Icon(
-                      _obscurePassword ? Icons.visibility : Icons.visibility_off,
+                      _obscurePassword
+                          ? Icons.visibility
+                          : Icons.visibility_off,
                     ),
                     onPressed: () {
                       setState(() {
@@ -92,7 +94,7 @@ class _Screen1State extends State<Screen1> {
                     },
                   ),
                 ),
-                validator: (value) { 
+                validator: (value) {
                   if (value == null || value.isEmpty) {
                     return 'Пожалуйста, введите пароль';
                   }
@@ -112,7 +114,9 @@ class _Screen1State extends State<Screen1> {
                   border: const OutlineInputBorder(),
                   suffixIcon: IconButton(
                     icon: Icon(
-                      _obscureConfirmPassword ? Icons.visibility : Icons.visibility_off,
+                      _obscureConfirmPassword
+                          ? Icons.visibility
+                          : Icons.visibility_off,
                     ),
                     onPressed: () {
                       setState(() {
@@ -135,11 +139,14 @@ class _Screen1State extends State<Screen1> {
               ElevatedButton(
                 onPressed: () {
                   if (_formKey.currentState!.validate()) {
-                    Navigator.pushNamed(context, '/test'); // Переход на экран Test
+                    Navigator.pushNamed(
+                      context,
+                      '/test',
+                    ); // Переход на экран Test
                   }
                 },
                 style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 15), 
+                  padding: const EdgeInsets.symmetric(vertical: 15),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),
                   ),
@@ -212,7 +219,9 @@ class _Screen2State extends State<Screen2> {
                   border: const OutlineInputBorder(),
                   suffixIcon: IconButton(
                     icon: Icon(
-                      _obscurePassword ? Icons.visibility : Icons.visibility_off,
+                      _obscurePassword
+                          ? Icons.visibility
+                          : Icons.visibility_off,
                     ),
                     onPressed: () {
                       setState(() {
@@ -235,7 +244,10 @@ class _Screen2State extends State<Screen2> {
               ElevatedButton(
                 onPressed: () {
                   if (_formKey.currentState!.validate()) {
-                    Navigator.pushNamed(context, '/test'); // Переход на экран Test
+                    Navigator.pushNamed(
+                      context,
+                      '/test',
+                    ); // Переход на экран Test
                   }
                 },
                 style: ElevatedButton.styleFrom(
@@ -244,10 +256,7 @@ class _Screen2State extends State<Screen2> {
                     borderRadius: BorderRadius.circular(10),
                   ),
                 ),
-                child: const Text(
-                  'Войти',
-                  style: TextStyle(fontSize: 18),
-                ),
+                child: const Text('Войти', style: TextStyle(fontSize: 18)),
               ),
               const SizedBox(height: 20),
               TextButton(
@@ -310,7 +319,7 @@ class _SplashWithLogoState extends State<SplashWithLogo> {
       body: Stack(
         children: [
           AnimatedOpacity(
-            opacity: _showMainScreen ? 1.0 : 0.0, 
+            opacity: _showMainScreen ? 1.0 : 0.0,
             duration: const Duration(milliseconds: 500),
             child: Center(
               child: Column(
@@ -319,7 +328,10 @@ class _SplashWithLogoState extends State<SplashWithLogo> {
                   ElevatedButton(
                     onPressed: () => Navigator.pushNamed(context, '/screen1'),
                     style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 140, vertical: 30),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 140,
+                        vertical: 30,
+                      ),
                     ),
                     child: const Text('Регистрация'),
                   ),
@@ -327,7 +339,10 @@ class _SplashWithLogoState extends State<SplashWithLogo> {
                   ElevatedButton(
                     onPressed: () => Navigator.pushNamed(context, '/screen2'),
                     style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 160, vertical: 30),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 160,
+                        vertical: 30,
+                      ),
                     ),
                     child: const Text('Вход'),
                   ),
