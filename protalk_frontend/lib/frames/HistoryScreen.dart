@@ -1,142 +1,98 @@
-
 import 'package:flutter/material.dart';
 
-class HistoryScreen extends StatefulWidget {
+class HistoryScreen extends StatelessWidget {
   const HistoryScreen({super.key});
-
-  @override
-  State<HistoryScreen> createState() => _HistoryScreenState();
-}
-
-class _HistoryScreenState extends State<HistoryScreen> {
-  bool _showSoftDetails = false;
-  bool _showHardDetails = false;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFD9CCB7),
-      appBar: AppBar(
-        title: const Text('История', style: TextStyle(fontSize: 24)),
-        backgroundColor: Colors.black45,
-        centerTitle: true,
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(20.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Блок Soft
-            _buildHistoryBlock(
-              title: '10 soft',
-              isExpanded: _showSoftDetails,
-              onTap: () {
-                setState(() {
-                  _showSoftDetails = !_showSoftDetails;
-                });
-              },
-              child: _buildSoftDetails(),
-            ),
-            
-            const SizedBox(height: 20),
-            
-            // Блок Hard
-            _buildHistoryBlock(
-              title: '7 hard',
-              isExpanded: _showHardDetails,
-              onTap: () {
-                setState(() {
-                  _showHardDetails = !_showHardDetails;
-                });
-              },
-              child: _buildHardDetails(),
-            ),
-          ],
-        ),
+
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          _buildInterviewCard(
+            context,
+            title: 'Soft Skills',
+            score: 10,
+            details: const [
+              {'title': 'Коммуникация', 'count': '3 статьи'},
+              {'title': 'Работа в команде', 'count': '5 статей'},
+              {'title': 'Эмпатия', 'count': '2 статьи'},
+            ],
+          ),
+          const SizedBox(height: 16),
+          _buildInterviewCard(
+            context,
+            title: 'Hard Skills',
+            score: 7,
+            details: const [
+              {'title': 'Алгоритмы', 'count': '2 статьи'},
+              {'title': 'Базы данных', 'count': '3 статьи'},
+              {'title': 'Сети', 'count': '2 статьи'},
+            ],
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildHistoryBlock({
+  Widget _buildInterviewCard(
+    BuildContext context, {
     required String title,
-    required bool isExpanded,
-    required VoidCallback onTap,
-    required Widget child,
+    required int score,
+    required List<Map<String, String>> details,
   }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
+    // Цвет заголовка зависит от типа
+    final Color titleColor =
+        (title == 'Soft Skills' || title == 'Hard Skills')
+            ? const Color.fromARGB(255, 127, 113, 179)
+            : Colors.grey;
+
+    return Card(
+      color: Colors.white.withOpacity(0.9),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      elevation: 5,
+      child: ExpansionTile(
+        collapsedIconColor: Colors.black,
+        iconColor: Colors.black,
+        title: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
               title,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 20,
+              style: TextStyle(
                 fontWeight: FontWeight.bold,
+                fontSize: 18,
+                color: titleColor,
               ),
             ),
-            TextButton(
-              onPressed: onTap,
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.black45,
+                borderRadius: BorderRadius.circular(12),
+              ),
               child: Text(
-                isExpanded ? 'свернуть' : 'подробнее',
-                style: const TextStyle(
-                  color: Colors.blueAccent,
-                  fontSize: 16,
-                ),
+                '$score / 10',
+                style: const TextStyle(color: Colors.white),
               ),
             ),
           ],
         ),
-        if (isExpanded) child,
-      ],
-    );
-  }
-
-  Widget _buildSoftDetails() {
-    return Column(
-      children: [
-        const SizedBox(height: 10),
-        _buildHistoryItem('Тема 1', '3 статьи'),
-        _buildHistoryItem('Тема 2', '5 статей'),
-        _buildHistoryItem('Тема 3', '2 статьи'),
-      ],
-    );
-  }
-
-  Widget _buildHardDetails() {
-    return Column(
-      children: [
-        const SizedBox(height: 10),
-        _buildHistoryItem('Тема A', '2 статьи'),
-        _buildHistoryItem('Тема B', '3 статьи'),
-        _buildHistoryItem('Тема C', '2 статьи'),
-      ],
-    );
-  }
-
-  Widget _buildHistoryItem(String title, String count) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            title,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 16,
-            ),
-          ),
-          Text(
-            count,
-            style: const TextStyle(
-              color: Colors.grey,
-              fontSize: 16,
-            ),
-          ),
-        ],
+        children:
+            details.map((detail) {
+              return ListTile(
+                title: Text(
+                  detail['title']!,
+                  style: const TextStyle(fontSize: 16),
+                ),
+                trailing: Text(
+                  detail['count']!,
+                  style: const TextStyle(color: Colors.grey),
+                ),
+              );
+            }).toList(),
       ),
     );
   }

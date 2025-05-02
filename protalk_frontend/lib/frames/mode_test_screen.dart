@@ -1,32 +1,14 @@
 import 'package:flutter/material.dart';
+import 'question_screen.dart';
 
-void main() {
-  runApp(const Knowledgebase());
-}
-
-class Knowledgebase extends StatelessWidget {
-  const Knowledgebase({super.key});
+class ModeTestScreen extends StatefulWidget {
+  const ModeTestScreen({Key? key}) : super(key: key);
 
   @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-        scaffoldBackgroundColor: const Color(0xFFD9CCB7),
-      ),
-      home: Scaffold(body: const ModeSelectionScreen()),
-    );
-  }
+  State<ModeTestScreen> createState() => _ModeTestScreenState();
 }
 
-class ModeSelectionScreen extends StatefulWidget {
-  const ModeSelectionScreen({super.key});
-
-  @override
-  State<ModeSelectionScreen> createState() => _ModeSelectionScreenState();
-}
-
-class _ModeSelectionScreenState extends State<ModeSelectionScreen> {
+class _ModeTestScreenState extends State<ModeTestScreen> {
   bool _softSelected = false;
   bool _hardSelected = false;
   String? _selectedMode;
@@ -63,18 +45,18 @@ class _ModeSelectionScreenState extends State<ModeSelectionScreen> {
     });
   }
 
-  void _navigateToArticleScreen(int articleNumber) {
+  void _navigateToQuestionScreen(int questionNumber) {
     Navigator.push(
       context,
       MaterialPageRoute(
         builder:
-            (context) => ArticleScreen(
+            (context) => QuestionScreen(
               mode: _selectedMode!,
               theme:
                   _softSelected
                       ? _softThemes[_selectedTheme!]
                       : _hardThemes[_selectedTheme!],
-              articleNumber: articleNumber,
+              questionNumber: questionNumber,
             ),
       ),
     );
@@ -182,7 +164,7 @@ class _ModeSelectionScreenState extends State<ModeSelectionScreen> {
                                           ),
                                           child: ElevatedButton(
                                             onPressed:
-                                                () => _navigateToArticleScreen(
+                                                () => _navigateToQuestionScreen(
                                                   i + 1,
                                                 ),
                                             style: ElevatedButton.styleFrom(
@@ -197,7 +179,7 @@ class _ModeSelectionScreenState extends State<ModeSelectionScreen> {
                                               ),
                                             ),
                                             child: Text(
-                                              'Статья ${i + 1}',
+                                              'Вопрос ${i + 1}',
                                               style: const TextStyle(
                                                 fontSize: 16,
                                                 color: Colors.white,
@@ -217,26 +199,6 @@ class _ModeSelectionScreenState extends State<ModeSelectionScreen> {
           ],
         ),
       ),
-    );
-  }
-}
-
-class ArticleScreen extends StatelessWidget {
-  final String mode;
-  final String theme;
-  final int articleNumber;
-
-  const ArticleScreen({
-    required this.mode,
-    required this.theme,
-    required this.articleNumber,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text('$mode - $theme')),
-      body: Center(child: Text('Статья $articleNumber')),
     );
   }
 }
