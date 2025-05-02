@@ -1,82 +1,164 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:protalk_frontend/frames/splash_screen.dart';
 
-class UserScreen extends StatelessWidget {
+class UserScreen extends StatefulWidget {
   const UserScreen({super.key});
+
+  @override
+  State<UserScreen> createState() => _UserScreenState();
+}
+
+class _UserScreenState extends State<UserScreen> {
+  bool _isEditing = false;
+  File? _avatarFile;
+
+  final TextEditingController _nameController = TextEditingController(
+    text: 'Иванов Иван Иванович',
+  );
+  final TextEditingController _emailController = TextEditingController(
+    text: 'ivanov@example.com',
+  );
+  final TextEditingController _gradeController = TextEditingController(
+    text: 'Middle',
+  );
+  final TextEditingController _positionController = TextEditingController(
+    text: 'Flutter разработчик',
+  );
+
+  @override
+  void initState() {
+    super.initState();
+    _loadAvatar();
+  }
+
+  Future<void> _loadAvatar() async {
+    final dir = await getApplicationDocumentsDirectory();
+    final file = File('${dir.path}/avatar.jpg');
+    if (await file.exists()) {
+      setState(() {
+        _avatarFile = file;
+      });
+    }
+  }
+
+  Future<void> _pickAvatar() async {
+    final picker = ImagePicker();
+    final picked = await picker.pickImage(source: ImageSource.gallery);
+    if (picked != null) {
+      final dir = await getApplicationDocumentsDirectory();
+      final saved = await File(picked.path).copy('${dir.path}/avatar.jpg');
+      setState(() {
+        _avatarFile = saved;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFD9CCB7), // Основной цвет фона
+      backgroundColor: const Color(0xFFF3EFE9),
       appBar: AppBar(
-        title: const Text('Профиль пользователя'),
-        backgroundColor: Colors.white,
+        automaticallyImplyLeading: false,
+        title: const Text('Профиль'),
         centerTitle: true,
+        backgroundColor: const Color.fromARGB(80, 0, 0, 0),
+        elevation: 1,
+        actions: [
+          IconButton(
+            icon: Icon(_isEditing ? Icons.check : Icons.edit),
+            onPressed: () {
+              setState(() {
+                _isEditing = !_isEditing;
+              });
+            },
+          ),
+        ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(20.0),
+      body: SingleChildScrollView(
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildInfoField('ФИО', 'Иванов Иван Иванович'),
+            const SizedBox(height: 30),
+            GestureDetector(
+              onTap: _isEditing ? _pickAvatar : null,
+              child: _buildAvatar(),
+            ),
             const SizedBox(height: 20),
-            _buildInfoField('Почта', 'ivanov@example.com'),
-            const SizedBox(height: 20),
-            _buildInfoField('Грейд', 'Middle'),
-            const SizedBox(height: 20),
-            _buildInfoField('Позиция', 'Flutter разработчик'),
-            const Spacer(), // Добавляем гибкое пространство
-            _buildLogoutButton(context), // Кнопка выхода
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20.0),
+              child: Column(
+                children: [
+                  _buildEditableField(Icons.person, 'ФИО', _nameController),
+                  const SizedBox(height: 10),
+                  _buildEditableField(Icons.email, 'Почта', _emailController),
+                  const SizedBox(height: 10),
+                  _buildEditableField(Icons.school, 'Грейд', _gradeController),
+                  const SizedBox(height: 10),
+                  _buildEditableField(
+                    Icons.work,
+                    'Позиция',
+                    _positionController,
+                  ),
+                  const SizedBox(height: 30),
+                  _buildLogoutButton(context),
+                  const SizedBox(height: 20),
+                ],
+              ),
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildInfoField(String label, String value) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: const TextStyle(
-            color: Colors.grey,
-            fontSize: 16,
-          ),
-        ),
-        const SizedBox(height: 5),
-        Text(
-          value,
-          style: const TextStyle(
-            color: Colors.black, // Изменил на черный для лучшей читаемости
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        const Divider(color: Colors.grey),
-      ],
+  Widget _buildAvatar() {
+    return CircleAvatar(
+      radius: 50,
+      backgroundColor: Colors.black45,
+      backgroundImage: _avatarFile != null ? FileImage(_avatarFile!) : null,
+      child:
+          _avatarFile == null
+              ? const Icon(Icons.person, size: 50, color: Colors.white)
+              : null,
+    );
+  }
+
+  Widget _buildEditableField(
+    IconData icon,
+    String label,
+    TextEditingController controller,
+  ) {
+    return Card(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      elevation: 2,
+      child: ListTile(
+        leading: Icon(icon, color: Colors.black54),
+        title: Text(label, style: const TextStyle(fontWeight: FontWeight.w500)),
+        subtitle:
+            _isEditing
+                ? TextFormField(
+                  controller: controller,
+                  decoration: const InputDecoration(border: InputBorder.none),
+                )
+                : Text(controller.text),
+      ),
     );
   }
 
   Widget _buildLogoutButton(BuildContext context) {
     return SizedBox(
       width: double.infinity,
-      child: ElevatedButton(
-        onPressed: () {
-          // Действие при выходе
-          _showLogoutDialog(context);
-        },
+      child: ElevatedButton.icon(
+        onPressed: () => _showLogoutDialog(context),
+        icon: const Icon(Icons.logout),
+        label: const Text('Выйти из аккаунта'),
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.redAccent,
-          padding: const EdgeInsets.symmetric(vertical: 15),
+          padding: const EdgeInsets.symmetric(vertical: 14),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(10),
-          ),
-        ),
-        child: const Text(
-          'Выйти из аккаунта',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 18,
           ),
         ),
       ),
@@ -86,28 +168,32 @@ class UserScreen extends StatelessWidget {
   void _showLogoutDialog(BuildContext context) {
     showDialog(
       context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Подтверждение выхода'),
-          content: const Text('Вы действительно хотите выйти из аккаунта?'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Отмена'),
-            ),
-            TextButton(
-              onPressed: () {
-                // Здесь должна быть логика выхода
-                Navigator.of(context).pop();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Вы успешно вышли из аккаунта')),
-                );
-              },
-              child: const Text('Выйти', style: TextStyle(color: Colors.red)),
-            ),
-          ],
-        );
-      },
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Подтверждение выхода'),
+            content: const Text('Вы действительно хотите выйти из аккаунта?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Отмена'),
+              ),
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Вы успешно вышли из аккаунта'),
+                    ),
+                  );
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (_) => const SplashScreen()),
+                  );
+                },
+                child: const Text('Выйти', style: TextStyle(color: Colors.red)),
+              ),
+            ],
+          ),
     );
   }
 }
