@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
-import 'register_screen.dart';
+import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
+
 import 'mode_selection_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -12,156 +15,81 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final _formKey = GlobalKey<FormState>();
+  bool _isLoading = false;
 
-  void _login() {
-    final trimmedEmail = _emailController.text.trim();
-    _emailController.text = trimmedEmail;
-
-    if (!_formKey.currentState!.validate()) return;
-
-    // Успешный вход
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => const ModeSelectionScreen()),
+  Future<void> _login() async {
+    setState(() => _isLoading = true);
+    final response = await http.post(
+      Uri.parse('http://localhost:8000/api/auth/token'),
+      headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+      body: {
+        'username': _emailController.text,
+        'password': _passwordController.text,
+      },
     );
+
+    setState(() => _isLoading = false);
+
+    if (response.statusCode == 200) {
+      final jsonData = json.decode(response.body);
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('access_token', jsonData['access_token']);
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const ModeSelectionScreen()),
+      );
+    } else {
+      _showErrorDialog('Неверный email или пароль');
+    }
   }
 
-  void _goToRegister() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const RegisterScreen()),
+  void _showErrorDialog(String message) {
+    showDialog(
+      context: context,
+      builder:
+          (_) => AlertDialog(
+            title: const Text('Ошибка входа'),
+            content: Text(message),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('ОК'),
+              ),
+            ],
+          ),
     );
-  }
-
-  bool _isValidEmail(String email) {
-    final emailRegExp = RegExp(r"^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$");
-    return emailRegExp.hasMatch(email);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFD9CCB7),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFFD9CCB7),
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pushReplacementNamed(context, '/'),
-        ),
-      ),
-      body: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Form(
-            key: _formKey,
-            child: Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: Color.fromARGB(255, 127, 113, 179),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text(
-                    'Вход',
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: Color.fromARGB(255, 127, 113, 179),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  TextFormField(
-                    controller: _emailController,
-                    decoration: InputDecoration(
-                      labelText: 'Email',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      prefixIcon: const Icon(Icons.email),
-                    ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Введите email';
-                      } else if (!_isValidEmail(value)) {
-                        return 'Некорректный email';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    controller: _passwordController,
-                    obscureText: true,
-                    decoration: InputDecoration(
-                      labelText: 'Пароль',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      prefixIcon: const Icon(Icons.lock),
-                    ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Введите пароль';
-                      } else if (value.length < 6) {
-                        return 'Пароль должен быть не менее 6 символов';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 24),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: _login,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blueGrey[800],
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      child: const Text(
-                        'Войти',
-                        style: TextStyle(fontSize: 18, color: Colors.white),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  GestureDetector(
-                    onTap: _goToRegister,
-                    child: const Text.rich(
-                      TextSpan(
-                        text: 'Нет аккаунта? ',
-                        style: TextStyle(
-                          color: Color.fromARGB(255, 127, 113, 179),
-                        ),
-                        children: [
-                          TextSpan(
-                            text: 'Зарегистрироваться',
-                            style: TextStyle(
-                              color: Color.fromARGB(255, 127, 113, 179),
-                              decoration: TextDecoration.underline,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+      appBar: AppBar(title: const Text('Вход')),
+      body: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          children: [
+            TextField(
+              controller: _emailController,
+              decoration: const InputDecoration(labelText: 'Email'),
             ),
-          ),
+            TextField(
+              controller: _passwordController,
+              decoration: const InputDecoration(labelText: 'Пароль'),
+              obscureText: true,
+            ),
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: _isLoading ? null : _login,
+              child:
+                  _isLoading
+                      ? const CircularProgressIndicator()
+                      : const Text('Войти'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pushNamed(context, '/register'),
+              child: const Text('Нет аккаунта? Зарегистрироваться'),
+            ),
+          ],
         ),
       ),
     );
