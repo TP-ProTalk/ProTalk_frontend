@@ -1,22 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:protalk_frontend/frames/knowledgebase.dart' as kb;
 import 'package:protalk_frontend/frames/test_screen.dart';
-import 'package:protalk_frontend/frames/user_screen.dart';
-import 'package:protalk_frontend/frames/test_history_screen.dart';
-import 'package:protalk_frontend/frames/interview_screen.dart';
-import 'package:protalk_frontend/services/auth_service.dart';
 
-class ModeSelectionScreen extends StatefulWidget {
-  const ModeSelectionScreen({super.key});
+class TestModeSelectionScreen extends StatefulWidget {
+  const TestModeSelectionScreen({super.key});
 
   @override
-  State<ModeSelectionScreen> createState() => _ModeSelectionScreenState();
+  State<TestModeSelectionScreen> createState() =>
+      _TestModeSelectionScreenState();
 }
 
-class _ModeSelectionScreenState extends State<ModeSelectionScreen> {
-  int _selectedIndex = 0;
-  bool _isLoading = true;
-  String? _error;
+class _TestModeSelectionScreenState extends State<TestModeSelectionScreen> {
   bool _softSelected = false;
   bool _hardSelected = false;
   String? _selectedMode;
@@ -28,41 +21,6 @@ class _ModeSelectionScreenState extends State<ModeSelectionScreen> {
   static const Color accentColor = Color.fromARGB(255, 127, 113, 179);
   static const Color accentLightColor = Color.fromARGB(255, 157, 144, 209);
   static const Color neutralColor = Color.fromARGB(255, 50, 40, 70);
-
-  @override
-  void initState() {
-    super.initState();
-    _checkAuth();
-  }
-
-  Future<void> _checkAuth() async {
-    try {
-      setState(() {
-        _isLoading = true;
-        _error = null;
-      });
-
-      final token = await AuthService.getToken();
-      if (token == null) {
-        throw Exception('Требуется авторизация');
-      }
-
-      setState(() {
-        _isLoading = false;
-      });
-    } catch (e) {
-      setState(() {
-        _error = e.toString();
-        _isLoading = false;
-      });
-    }
-  }
-
-  void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
-  }
 
   void _selectSoft() {
     setState(() {
@@ -105,92 +63,11 @@ class _ModeSelectionScreenState extends State<ModeSelectionScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoading) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
-    }
-
-    if (_error != null) {
-      return Scaffold(
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(_error!, style: const TextStyle(color: Colors.red)),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.pushReplacementNamed(context, '/login');
-                },
-                child: const Text('Войти'),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
-    return Scaffold(
-      backgroundColor: const Color(0xFFD9CCB7),
-      body: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 300),
-        child: _buildBody(),
-      ),
-      bottomNavigationBar: BottomNavigationBar(
-        items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(
-            icon: Icon(Icons.quiz),
-            label: 'Тесты',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.menu_book),
-            label: 'База знаний',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.people),
-            label: 'Собеседование',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.history),
-            label: 'История',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: 'Профиль',
-          ),
-        ],
-        currentIndex: _selectedIndex,
-        selectedItemColor: Colors.white,
-        unselectedItemColor: Colors.grey,
-        onTap: _onItemTapped,
-        type: BottomNavigationBarType.fixed,
-        backgroundColor: const Color.fromARGB(255, 127, 113, 179),
-      ),
-    );
-  }
-
-  Widget _buildBody() {
-    switch (_selectedIndex) {
-      case 0: // Тесты
-        return _buildTestSelection();
-      case 1: // База знаний
-        return const kb.KnowledgeBaseScreen();
-      case 2: // Собеседование
-        return const InterviewScreen();
-      case 3: // История
-        return const TestHistoryScreen();
-      case 4: // Профиль
-        return const UserScreen();
-      default:
-        return const kb.KnowledgeBaseScreen();
-    }
-  }
-
-  Widget _buildTestSelection() {
     return Scaffold(
       backgroundColor: const Color(0xFFD9CCB7),
       appBar: AppBar(
         title: const Text(
-          'Выбор направления',
+          'Тесты',
           style: TextStyle(
             fontFamily: 'Cuyabra',
           ),

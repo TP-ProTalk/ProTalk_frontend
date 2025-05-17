@@ -1,26 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:protalk_frontend/frames/splash_screen.dart';
 import 'package:protalk_frontend/frames/register_screen.dart';
 import 'package:protalk_frontend/frames/login_screen.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:protalk_frontend/frames/mode_selection_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  // Получаем доступ к SharedPreferences
-  final prefs = await SharedPreferences.getInstance();
-
-  // Проверяем, есть ли токен
-  final String? token = prefs.getString('token');
-
-  runApp(ProTalkApp(isAuthenticated: token != null));
+  await dotenv.load(fileName: '.env');
+  runApp(const ProTalkApp());
 }
 
 class ProTalkApp extends StatelessWidget {
-  final bool isAuthenticated;
-
-  const ProTalkApp({Key? key, required this.isAuthenticated}) : super(key: key);
+  const ProTalkApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -28,12 +20,11 @@ class ProTalkApp extends StatelessWidget {
       title: 'ProTalk',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        useMaterial3: true,
         primarySwatch: Colors.purple,
         scaffoldBackgroundColor: const Color(0xFFD9CCB7),
         appBarTheme: const AppBarTheme(
           backgroundColor: Color.fromARGB(255, 127, 113, 179),
-          foregroundColor: Color.fromARGB(255, 255, 255, 255),
+          foregroundColor: Colors.white,
           centerTitle: true,
         ),
         bottomNavigationBarTheme: const BottomNavigationBarThemeData(
@@ -53,8 +44,7 @@ class ProTalkApp extends StatelessWidget {
           titleMedium: TextStyle(fontFamily: 'Cuyabra', fontSize: 18),
         ),
       ),
-      home:
-          isAuthenticated ? const ModeSelectionScreen() : const SplashScreen(),
+      home: const SplashScreen(),
       routes: {
         '/register': (context) => const RegisterScreen(),
         '/login': (context) => const LoginScreen(),

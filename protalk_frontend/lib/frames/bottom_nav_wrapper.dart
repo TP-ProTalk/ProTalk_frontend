@@ -13,7 +13,7 @@ class BottomNavWrapper extends StatefulWidget {
 }
 
 class _BottomNavWrapperState extends State<BottomNavWrapper> {
-  int _currentIndex = 1;
+  int _currentIndex = 4;
 
   final List<Widget> _pages = const [
     Knowledgebase(),
