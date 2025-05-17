@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
-import 'register_screen.dart';
-import 'mode_selection_screen.dart';
+import 'package:protalk_frontend/services/api_service.dart';
+import 'package:protalk_frontend/frames/register_screen.dart';
+import 'package:protalk_frontend/frames/mode_selection_screen.dart';
+import 'package:protalk_frontend/services/auth_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -13,18 +15,64 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
+  bool _isLoading = false;
+  final _apiService = ApiService();
 
-  void _login() {
-    final trimmedEmail = _emailController.text.trim();
-    _emailController.text = trimmedEmail;
+  // Функция для удаления пробелов в конце строки
+  String _trimTrailingSpaces(String value) {
+    return value.trimRight();
+  }
+
+  Future<void> _login() async {
+    // Скрываем клавиатуру
+    FocusScope.of(context).unfocus();
 
     if (!_formKey.currentState!.validate()) return;
 
-    // Успешный вход
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => const ModeSelectionScreen()),
-    );
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final response = await _apiService.login(
+        _trimTrailingSpaces(_emailController.text),
+        _trimTrailingSpaces(_passwordController.text),
+      );
+
+      if (!mounted) return;
+
+      final accessToken = response['access_token'];
+      final userId = response['user_id']?.toString() ?? '';
+
+      if (accessToken != null && accessToken is String) {
+        await AuthService.saveToken(accessToken, userId);
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const ModeSelectionScreen()),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Ошибка при получении токена'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.toString().replaceAll('Exception: ', '')),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
   }
 
   void _goToRegister() {
@@ -63,7 +111,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
-                    color: Color.fromARGB(255, 127, 113, 179),
+                    color: const Color.fromARGB(255, 127, 113, 179),
                     blurRadius: 10,
                     offset: const Offset(0, 4),
                   ),
@@ -90,10 +138,16 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       prefixIcon: const Icon(Icons.email),
                     ),
+                    onChanged: (value) {
+                      _emailController.text = _trimTrailingSpaces(value);
+                      _emailController.selection = TextSelection.fromPosition(
+                        TextPosition(offset: _emailController.text.length),
+                      );
+                    },
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return 'Введите email';
-                      } else if (!_isValidEmail(value)) {
+                      } else if (!_isValidEmail(_trimTrailingSpaces(value))) {
                         return 'Некорректный email';
                       }
                       return null;
@@ -110,10 +164,17 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       prefixIcon: const Icon(Icons.lock),
                     ),
+                    onChanged: (value) {
+                      _passwordController.text = _trimTrailingSpaces(value);
+                      _passwordController.selection =
+                          TextSelection.fromPosition(
+                        TextPosition(offset: _passwordController.text.length),
+                      );
+                    },
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return 'Введите пароль';
-                      } else if (value.length < 6) {
+                      } else if (_trimTrailingSpaces(value).length < 6) {
                         return 'Пароль должен быть не менее 6 символов';
                       }
                       return null;
@@ -123,7 +184,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: _login,
+                      onPressed: _isLoading ? null : _login,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.blueGrey[800],
                         padding: const EdgeInsets.symmetric(vertical: 16),
@@ -131,10 +192,21 @@ class _LoginScreenState extends State<LoginScreen> {
                           borderRadius: BorderRadius.circular(12),
                         ),
                       ),
-                      child: const Text(
-                        'Войти',
-                        style: TextStyle(fontSize: 18, color: Colors.white),
-                      ),
+                      child: _isLoading
+                          ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor:
+                                    AlwaysStoppedAnimation<Color>(Colors.white),
+                              ),
+                            )
+                          : const Text(
+                              'Войти',
+                              style:
+                                  TextStyle(fontSize: 18, color: Colors.white),
+                            ),
                     ),
                   ),
                   const SizedBox(height: 16),

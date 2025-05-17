@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
-import 'login_screen.dart';
-import 'mode_selection_screen.dart';
+import 'package:protalk_frontend/services/api_service.dart';
+import 'package:protalk_frontend/services/auth_service.dart';
+import 'package:protalk_frontend/frames/login_screen.dart';
+import 'package:protalk_frontend/frames/mode_selection_screen.dart';
+import 'package:protalk_frontend/frames/onboarding_screens.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -14,27 +17,64 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmPasswordController =
       TextEditingController();
-
   final _formKey = GlobalKey<FormState>();
+  bool _isLoading = false;
+  final _apiService = ApiService();
+  String? _error;
 
-  void _register() {
-    final trimmedEmail = _emailController.text.trim();
-    _emailController.text = trimmedEmail;
+  // Функция для удаления пробелов в конце строки
+  String _trimTrailingSpaces(String value) {
+    return value.trimRight();
+  }
 
-    if (!_formKey.currentState!.validate()) return;
+  Future<void> _register() async {
+    // Скрываем клавиатуру
+    FocusScope.of(context).unfocus();
 
-    if (_passwordController.text != _confirmPasswordController.text) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Пароли не совпадают')));
-      return;
+    if (_formKey.currentState!.validate()) {
+      setState(() {
+        _isLoading = true;
+        _error = null;
+      });
+
+      try {
+        print('Начало регистрации...');
+        final token = await _apiService.register(
+          _trimTrailingSpaces(_emailController.text),
+          _trimTrailingSpaces(_passwordController.text),
+        );
+
+        print('Получен токен: $token');
+
+        if (token == null) {
+          throw Exception('Ошибка регистрации: токен не получен');
+        }
+
+        if (mounted) {
+          print('Переход на экран онбординга...');
+          await Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => OnboardingScreens(
+                email: _emailController.text,
+                password: _passwordController.text,
+              ),
+            ),
+          );
+        }
+      } catch (e) {
+        print('Ошибка при регистрации: $e');
+        setState(() {
+          _error = e.toString();
+        });
+      } finally {
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+          });
+        }
+      }
     }
-
-    // Успешная регистрация
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => const ModeSelectionScreen()),
-    );
   }
 
   void _goToLogin() {
@@ -73,7 +113,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
-                    color: Color.fromARGB(255, 127, 113, 179),
+                    color: const Color.fromARGB(255, 127, 113, 179),
                     blurRadius: 10,
                     offset: const Offset(0, 4),
                   ),
@@ -100,10 +140,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                       prefixIcon: const Icon(Icons.email),
                     ),
+                    onChanged: (value) {
+                      _emailController.text = _trimTrailingSpaces(value);
+                      _emailController.selection = TextSelection.fromPosition(
+                        TextPosition(offset: _emailController.text.length),
+                      );
+                    },
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return 'Введите email';
-                      } else if (!_isValidEmail(value)) {
+                      } else if (!_isValidEmail(_trimTrailingSpaces(value))) {
                         return 'Некорректный email';
                       }
                       return null;
@@ -120,10 +166,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                       prefixIcon: const Icon(Icons.lock),
                     ),
+                    onChanged: (value) {
+                      _passwordController.text = _trimTrailingSpaces(value);
+                      _passwordController.selection =
+                          TextSelection.fromPosition(
+                        TextPosition(offset: _passwordController.text.length),
+                      );
+                    },
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return 'Введите пароль';
-                      } else if (value.length < 6) {
+                      } else if (_trimTrailingSpaces(value).length < 6) {
                         return 'Пароль должен быть не менее 6 символов';
                       }
                       return null;
@@ -140,9 +193,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                       prefixIcon: const Icon(Icons.lock_outline),
                     ),
+                    onChanged: (value) {
+                      _confirmPasswordController.text =
+                          _trimTrailingSpaces(value);
+                      _confirmPasswordController.selection =
+                          TextSelection.fromPosition(
+                        TextPosition(
+                            offset: _confirmPasswordController.text.length),
+                      );
+                    },
                     validator: (value) {
                       if (value == null || value.isEmpty) {
-                        return 'Повторите пароль';
+                        return 'Подтвердите пароль';
+                      } else if (_trimTrailingSpaces(value) !=
+                          _trimTrailingSpaces(_passwordController.text)) {
+                        return 'Пароли не совпадают';
                       }
                       return null;
                     },
@@ -151,18 +216,29 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: _register,
+                      onPressed: _isLoading ? null : _register,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Color.fromARGB(150, 127, 113, 179),
+                        backgroundColor: Colors.blueGrey[800],
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
                       ),
-                      child: const Text(
-                        'Зарегистрироваться',
-                        style: TextStyle(fontSize: 18, color: Colors.white),
-                      ),
+                      child: _isLoading
+                          ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor:
+                                    AlwaysStoppedAnimation<Color>(Colors.white),
+                              ),
+                            )
+                          : const Text(
+                              'Зарегистрироваться',
+                              style:
+                                  TextStyle(fontSize: 18, color: Colors.white),
+                            ),
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -178,7 +254,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           TextSpan(
                             text: 'Войти',
                             style: TextStyle(
-                              color: Colors.blue,
+                              color: Color.fromARGB(255, 127, 113, 179),
                               decoration: TextDecoration.underline,
                             ),
                           ),

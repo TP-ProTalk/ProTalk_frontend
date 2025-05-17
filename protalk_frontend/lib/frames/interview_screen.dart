@@ -57,28 +57,26 @@ class _InterviewScreenState extends State<InterviewScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF1EFEA),
+      backgroundColor: const Color(0xFFD9CCB7),
       appBar: AppBar(
-        backgroundColor: const Color(0xFFF1EFEA),
-        elevation: 0,
         title: const Text(
-          'Собеседование AI',
+          'Собеседование',
           style: TextStyle(
-            color: Color.fromARGB(255, 76, 72, 114),
-            fontWeight: FontWeight.bold,
+            fontFamily: 'Cuyabra',
           ),
         ),
         centerTitle: true,
-        leading:
-            _isInterviewStarted
-                ? IconButton(
-                  icon: const Icon(
-                    Icons.arrow_back,
-                    color: Color.fromARGB(255, 76, 72, 114),
-                  ),
-                  onPressed: _goBackToSelection,
-                )
-                : null,
+        backgroundColor: const Color.fromARGB(255, 127, 113, 179),
+        elevation: 1,
+        leading: _isInterviewStarted
+            ? IconButton(
+                icon: const Icon(
+                  Icons.arrow_back,
+                  color: Color.fromARGB(255, 76, 72, 114),
+                ),
+                onPressed: _goBackToSelection,
+              )
+            : null,
         iconTheme: const IconThemeData(color: Color.fromARGB(255, 76, 72, 114)),
       ),
       body: Column(
@@ -155,10 +153,9 @@ class _InterviewScreenState extends State<InterviewScreen> {
                       itemBuilder: (context, index) {
                         final message = _messages[index];
                         return Align(
-                          alignment:
-                              message.isUser
-                                  ? Alignment.centerRight
-                                  : Alignment.centerLeft,
+                          alignment: message.isUser
+                              ? Alignment.centerRight
+                              : Alignment.centerLeft,
                           child: Container(
                             margin: const EdgeInsets.symmetric(vertical: 4),
                             padding: const EdgeInsets.symmetric(
@@ -170,10 +167,9 @@ class _InterviewScreenState extends State<InterviewScreen> {
                                   MediaQuery.of(context).size.width * 0.75,
                             ),
                             decoration: BoxDecoration(
-                              color:
-                                  message.isUser
-                                      ? const Color.fromARGB(255, 127, 113, 179)
-                                      : Colors.white,
+                              color: message.isUser
+                                  ? const Color.fromARGB(255, 127, 113, 179)
+                                  : Colors.white,
                               borderRadius: BorderRadius.only(
                                 topLeft: const Radius.circular(16),
                                 topRight: const Radius.circular(16),
@@ -195,10 +191,9 @@ class _InterviewScreenState extends State<InterviewScreen> {
                             child: Text(
                               message.text,
                               style: TextStyle(
-                                color:
-                                    message.isUser
-                                        ? Colors.white
-                                        : Colors.black87,
+                                color: message.isUser
+                                    ? Colors.white
+                                    : Colors.black87,
                                 fontSize: 16,
                               ),
                             ),
