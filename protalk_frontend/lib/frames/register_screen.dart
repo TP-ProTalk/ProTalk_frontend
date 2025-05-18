@@ -39,9 +39,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
       try {
         print('Начало регистрации...');
+        // Сначала создаем пользователя с минимальными данными
         final token = await _apiService.register(
           _trimTrailingSpaces(_emailController.text),
           _trimTrailingSpaces(_passwordController.text),
+          '+7', // Минимальный номер телефона
+          18, // Минимальный возраст
+          'male', // Пол по умолчанию
+          'Junior', // Грейд по умолчанию
         );
 
         print('Получен токен: $token');

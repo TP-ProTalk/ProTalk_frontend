@@ -1,272 +1,173 @@
 import 'package:flutter/material.dart';
-import 'package:protalk_frontend/services/api_service.dart';
-import 'package:protalk_frontend/services/auth_service.dart';
+import '../services/api_service.dart';
+import '../styles/theme.dart';
 
 class OnboardingScreen extends StatefulWidget {
-  const OnboardingScreen({super.key});
+  const OnboardingScreen({Key? key}) : super(key: key);
 
   @override
   State<OnboardingScreen> createState() => _OnboardingScreenState();
 }
 
 class _OnboardingScreenState extends State<OnboardingScreen> {
-  final _formKey = GlobalKey<FormState>();
   final _apiService = ApiService();
-  bool _isLoading = false;
-  String? _error;
-
-  // Контроллеры для полей формы
+  final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
-  final _surnameController = TextEditingController();
-  final _patronymicController = TextEditingController();
   final _emailController = TextEditingController();
-  final _phoneController = TextEditingController();
-  final _birthDateController = TextEditingController();
-  final _mainVacancyController = TextEditingController();
-  final _secondaryVacancy1Controller = TextEditingController();
-  final _secondaryVacancy2Controller = TextEditingController();
-  final _gradeController = TextEditingController();
-  final _experienceController = TextEditingController();
-  final _educationController = TextEditingController();
-  final _skillsController = TextEditingController();
-  final _aboutController = TextEditingController();
-
-  @override
-  void dispose() {
-    _nameController.dispose();
-    _surnameController.dispose();
-    _patronymicController.dispose();
-    _emailController.dispose();
-    _phoneController.dispose();
-    _birthDateController.dispose();
-    _mainVacancyController.dispose();
-    _secondaryVacancy1Controller.dispose();
-    _secondaryVacancy2Controller.dispose();
-    _gradeController.dispose();
-    _experienceController.dispose();
-    _educationController.dispose();
-    _skillsController.dispose();
-    _aboutController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _submitForm() async {
-    if (!_formKey.currentState!.validate()) return;
-
-    try {
-      setState(() {
-        _isLoading = true;
-        _error = null;
-      });
-
-      final token = await AuthService.getToken();
-      if (token == null) {
-        throw Exception('Требуется авторизация');
-      }
-
-      final userData = {
-        'name': _nameController.text,
-        'surname': _surnameController.text,
-        'patronymic': _patronymicController.text,
-        'email': _emailController.text,
-        'phone': _phoneController.text,
-        'birth_date': _birthDateController.text,
-        'main_vacancy': _mainVacancyController.text,
-        'secondary_vacancy1': _secondaryVacancy1Controller.text,
-        'secondary_vacancy2': _secondaryVacancy2Controller.text,
-        'grade': _gradeController.text,
-        'experience': int.tryParse(_experienceController.text) ?? 0,
-        'education': _educationController.text,
-        'skills': _skillsController.text,
-        'about': _aboutController.text,
-      };
-
-      await _apiService.updateUserProfile(token, userData);
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Профиль успешно обновлен')),
-        );
-        Navigator.pop(context);
-      }
-    } catch (e) {
-      setState(() {
-        _error = e.toString();
-      });
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
-    }
-  }
+  final _passwordController = TextEditingController();
+  bool _isLoading = false;
+  bool _isLogin = true;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF3EFE9),
-      appBar: AppBar(
-        title: const Text(
-          'Обновление профиля',
-          style: TextStyle(
-            fontFamily: 'Cuyabra',
+      backgroundColor: AppTheme.backgroundColor,
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const Text(
+                  'Добро пожаловать',
+                  style: TextStyle(
+                    fontSize: 32,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 32.0),
+                TextFormField(
+                  controller: _nameController,
+                  decoration: AppTheme.textFieldDecoration.copyWith(
+                    hintText: 'Имя',
+                    prefixIcon: const Icon(Icons.person),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Пожалуйста, введите имя';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16.0),
+                TextFormField(
+                  controller: _emailController,
+                  decoration: AppTheme.textFieldDecoration.copyWith(
+                    hintText: 'Email',
+                    prefixIcon: const Icon(Icons.email),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Пожалуйста, введите email';
+                    }
+                    if (!value.contains('@')) {
+                      return 'Пожалуйста, введите корректный email';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16.0),
+                TextFormField(
+                  controller: _passwordController,
+                  decoration: AppTheme.textFieldDecoration.copyWith(
+                    hintText: 'Пароль',
+                    prefixIcon: const Icon(Icons.lock),
+                  ),
+                  obscureText: true,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Пожалуйста, введите пароль';
+                    }
+                    if (value.length < 6) {
+                      return 'Пароль должен содержать минимум 6 символов';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 32.0),
+                SizedBox(
+                  height: 48.0,
+                  child: ElevatedButton(
+                    onPressed: _isLoading ? null : _handleSubmit,
+                    style: AppTheme.primaryButtonStyle,
+                    child: _isLoading
+                        ? const CircularProgressIndicator()
+                        : Text(_isLogin ? 'Войти' : 'Зарегистрироваться'),
+                  ),
+                ),
+                const SizedBox(height: 16.0),
+                TextButton(
+                  onPressed: () {
+                    setState(() {
+                      _isLogin = !_isLogin;
+                    });
+                  },
+                  child: Text(
+                    _isLogin
+                        ? 'Нет аккаунта? Зарегистрируйтесь'
+                        : 'Уже есть аккаунт? Войдите',
+                    style: TextStyle(
+                      color: AppTheme.primaryColor,
+                      fontSize: 16,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
-        centerTitle: true,
-        backgroundColor: const Color.fromARGB(255, 127, 113, 179),
-        elevation: 1,
-      ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    if (_error != null)
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        margin: const EdgeInsets.only(bottom: 16),
-                        decoration: BoxDecoration(
-                          color: Colors.red.shade100,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          _error!,
-                          style: const TextStyle(color: Colors.red),
-                        ),
-                      ),
-                    _buildSection(
-                      'Личная информация',
-                      [
-                        _buildTextField(
-                          'Имя',
-                          _nameController,
-                          validator: (value) =>
-                              value?.isEmpty ?? true ? 'Введите имя' : null,
-                        ),
-                        _buildTextField(
-                          'Фамилия',
-                          _surnameController,
-                          validator: (value) =>
-                              value?.isEmpty ?? true ? 'Введите фамилию' : null,
-                        ),
-                        _buildTextField('Отчество', _patronymicController),
-                        _buildTextField(
-                          'Email',
-                          _emailController,
-                          validator: (value) =>
-                              value?.isEmpty ?? true ? 'Введите email' : null,
-                        ),
-                        _buildTextField('Телефон', _phoneController),
-                        _buildTextField('Дата рождения', _birthDateController),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    _buildSection(
-                      'Профессиональная информация',
-                      [
-                        _buildTextField(
-                          'Основная вакансия',
-                          _mainVacancyController,
-                          validator: (value) => value?.isEmpty ?? true
-                              ? 'Введите вакансию'
-                              : null,
-                        ),
-                        _buildTextField('Дополнительная вакансия 1',
-                            _secondaryVacancy1Controller),
-                        _buildTextField('Дополнительная вакансия 2',
-                            _secondaryVacancy2Controller),
-                        _buildTextField('Уровень', _gradeController),
-                        _buildTextField('Опыт работы', _experienceController),
-                        _buildTextField('Образование', _educationController),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    _buildSection(
-                      'Дополнительная информация',
-                      [
-                        _buildTextField('Навыки', _skillsController),
-                        _buildTextField(
-                          'О себе',
-                          _aboutController,
-                          maxLines: 3,
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 24),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: _submitForm,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor:
-                              const Color.fromARGB(255, 127, 113, 179),
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        child: const Text(
-                          'Сохранить',
-                          style: TextStyle(
-                            fontSize: 18,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-    );
-  }
-
-  Widget _buildSection(String title, List<Widget> children) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              title,
-              style: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 16),
-            ...children,
-          ],
-        ),
       ),
     );
   }
 
-  Widget _buildTextField(
-    String label,
-    TextEditingController controller, {
-    String? Function(String?)? validator,
-    int maxLines = 1,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: TextFormField(
-        controller: controller,
-        decoration: InputDecoration(
-          labelText: label,
-          border: const OutlineInputBorder(),
-          filled: true,
-          fillColor: Colors.white,
+  Future<void> _handleSubmit() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      if (_isLogin) {
+        await _apiService.login(
+          _emailController.text,
+          _passwordController.text,
+        );
+      } else {
+        await _apiService.register(
+          _emailController.text,
+          _passwordController.text,
+          '+7 (999) 999-99-99', // Тестовый номер телефона
+          18, // Тестовый возраст
+          'male', // Тестовый пол
+          '11', // Тестовый класс
+        );
+      }
+      // TODO: Перейти на главный экран
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Ошибка: $e'),
+          backgroundColor: AppTheme.errorColor,
         ),
-        validator: validator,
-        maxLines: maxLines,
-      ),
-    );
+      );
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
   }
 }

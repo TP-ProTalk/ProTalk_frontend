@@ -196,7 +196,7 @@ class _ProfileUpdateScreenState extends State<ProfileUpdateScreen> {
                       'Личная информация',
                       [
                         _buildTextField(
-                          'Имя',
+                          'ИмХУЙя',
                           _nameController,
                           validator: (value) =>
                               value?.isEmpty ?? true ? 'Введите имя' : null,

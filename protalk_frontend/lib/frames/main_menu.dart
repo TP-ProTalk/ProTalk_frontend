@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:protalk_frontend/frames/KnowledgeBase.dart';
 import 'package:protalk_frontend/frames/test_mode_selection.dart';
-import 'package:protalk_frontend/frames/profile_screen.dart';
 import 'package:protalk_frontend/frames/interview_screen.dart';
+import 'package:protalk_frontend/frames/onboarding_screens.dart';
 
 class MainMenu extends StatelessWidget {
   const MainMenu({super.key});
@@ -69,15 +69,17 @@ class MainMenu extends StatelessWidget {
               },
             ),
             const SizedBox(height: 16),
-            _buildMenuButton(
-              context,
-              'Профиль',
-              Icons.person,
-              () {
+            ListTile(
+              leading: const Icon(Icons.person),
+              title: const Text('Профиль'),
+              onTap: () {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => const ProfileScreen(),
+                    builder: (context) => const OnboardingScreens(
+                      email: '',
+                      password: '',
+                    ),
                   ),
                 );
               },

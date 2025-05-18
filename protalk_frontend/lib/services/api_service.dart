@@ -132,14 +132,35 @@ class ApiService {
     }
   }
 
-  Future<String?> register(String email, String password) async {
+  Future<String?> register(
+    String email,
+    String password,
+    String phoneNumber,
+    int age,
+    String sex,
+    String grade,
+  ) async {
     try {
+      // Сначала регистрируем пользователя
       final url = '$_baseUrl/api/auth/register';
-      final headers = {'Content-Type': 'application/json'};
+      final headers = {
+        'Content-Type': 'application/json',
+      };
       final body = {
         'email': email,
+        'phone_number': phoneNumber,
+        'age': age,
+        'sex': sex,
+        'grade': grade,
         'password': password,
+        'hashed_password': password,
       };
+
+      print('=== Register Request ===');
+      print('URL: $url');
+      print('Headers: $headers');
+      print('Body: $body');
+      print('=====================');
 
       _logRequest('POST', url, headers, body);
 
@@ -149,18 +170,31 @@ class ApiService {
         body: jsonEncode(body),
       );
 
+      print('=== Register Response ===');
+      print('Status Code: ${response.statusCode}');
+      print('Body: ${response.body}');
+      print('=======================');
+
       _logResponse(response.statusCode, response.body);
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        // После успешной регистрации делаем запрос на получение токена
+        // После успешной регистрации получаем токен
         final tokenUrl = '$_baseUrl/api/auth/token';
         final tokenHeaders = {
           'Content-Type': 'application/x-www-form-urlencoded'
         };
         final tokenBody = {
+          'grant_type': 'password',
           'username': email,
           'password': password,
+          'scope': '',
         };
+
+        print('=== Token Request ===');
+        print('URL: $tokenUrl');
+        print('Headers: $tokenHeaders');
+        print('Body: $tokenBody');
+        print('=====================');
 
         _logRequest('POST', tokenUrl, tokenHeaders, tokenBody);
 
@@ -169,6 +203,11 @@ class ApiService {
           headers: tokenHeaders,
           body: tokenBody,
         );
+
+        print('=== Token Response ===');
+        print('Status Code: ${tokenResponse.statusCode}');
+        print('Body: ${tokenResponse.body}');
+        print('=======================');
 
         _logResponse(tokenResponse.statusCode, tokenResponse.body);
 
@@ -188,17 +227,19 @@ class ApiService {
         throw Exception('Не удалось получить токен после регистрации');
       } else if (response.statusCode == 422) {
         final data = jsonDecode(response.body);
-        throw Exception(data['detail'] ?? 'Ошибка валидации');
+        if (data['detail'] != null) {
+          throw Exception(data['detail']);
+        }
+        throw Exception('Ошибка валидации данных');
       } else if (response.statusCode == 400) {
         final data = jsonDecode(response.body);
-        final errorMessage = data['detail'] ?? 'Неизвестная ошибка';
-        print('Ошибка регистрации: $errorMessage');
-        throw Exception(errorMessage);
+        if (data['detail'] != null) {
+          throw Exception(data['detail']);
+        }
+        throw Exception('Ошибка регистрации');
       } else {
-        final errorMessage =
-            'Ошибка регистрации: ${response.statusCode} - ${response.body}';
-        print(errorMessage);
-        throw Exception(errorMessage);
+        throw Exception(
+            'Ошибка регистрации: ${response.statusCode} - ${response.body}');
       }
     } catch (e) {
       print('Register error: $e');
@@ -1319,6 +1360,206 @@ class ApiService {
         throw Exception('Ошибка удаления вопроса: ${response.body}');
       }
     } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<String> sendMessage(String message) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$_baseUrl/chat/send'),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'message': message,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return data['response'] as String;
+      } else {
+        throw Exception('Ошибка отправки сообщения: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Ошибка отправки сообщения: $e');
+    }
+  }
+
+  Future<String> getNextQuestion(String? answer) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$_baseUrl/interview/next'),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'answer': answer,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return data['question'] as String;
+      } else {
+        throw Exception('Ошибка получения вопроса: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Ошибка получения вопроса: $e');
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> getCategories() async {
+    try {
+      final response = await http.get(
+        Uri.parse('$_baseUrl/knowledge/categories'),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(response.body);
+        return data.cast<Map<String, dynamic>>();
+      } else {
+        throw Exception('Ошибка получения категорий: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Ошибка получения категорий: $e');
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> getTestModes() async {
+    try {
+      final response = await http.get(
+        Uri.parse('$_baseUrl/test/modes'),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(response.body);
+        return data.cast<Map<String, dynamic>>();
+      } else {
+        throw Exception(
+            'Ошибка получения режимов тестирования: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Ошибка получения режимов тестирования: $e');
+    }
+  }
+
+  // Получение данных пользователя
+  Future<Map<String, dynamic>> getUser() async {
+    if (_isOfflineMode()) {
+      await _simulateNetworkDelay();
+      return {
+        'name': 'Test User',
+        'email': 'test@example.com',
+        'completedCourses': 5,
+        'completedTests': 10,
+        'averageScore': 85,
+      };
+    }
+
+    try {
+      final token = await _storage.read(key: 'access_token');
+      if (token == null) {
+        throw Exception('Токен не найден');
+      }
+
+      final url = '$_baseUrl/api/users/me';
+      final headers = {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      };
+
+      _logRequest('GET', url, headers, null);
+
+      final response = await http.get(
+        Uri.parse(url),
+        headers: headers,
+      );
+
+      _logResponse(response.statusCode, response.body);
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        await _saveToCache('user_data', data);
+        return data;
+      } else {
+        throw Exception(
+            'Ошибка получения данных пользователя: ${response.body}');
+      }
+    } catch (e) {
+      print('Get user error: $e');
+      final cachedData = await _getFromCache('user_data');
+      if (cachedData != null) {
+        return Map<String, dynamic>.from(cachedData);
+      }
+      rethrow;
+    }
+  }
+
+  // Получение вопросов для теста
+  Future<List<Map<String, dynamic>>> getQuestions() async {
+    if (_isOfflineMode()) {
+      await _simulateNetworkDelay();
+      return [
+        {
+          'question':
+              'Какой язык программирования используется для разработки Android-приложений?',
+          'answers': ['Java', 'Python', 'C++', 'JavaScript'],
+          'correctAnswer': 'Java',
+        },
+        {
+          'question': 'Что такое Flutter?',
+          'answers': [
+            'Фреймворк для разработки мобильных приложений',
+            'Язык программирования',
+            'База данных',
+            'Операционная система'
+          ],
+          'correctAnswer': 'Фреймворк для разработки мобильных приложений',
+        },
+      ];
+    }
+
+    try {
+      final token = await _storage.read(key: 'access_token');
+      if (token == null) {
+        throw Exception('Токен не найден');
+      }
+
+      final url = '$_baseUrl/api/questions';
+      final headers = {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      };
+
+      _logRequest('GET', url, headers, null);
+
+      final response = await http.get(
+        Uri.parse(url),
+        headers: headers,
+      );
+
+      _logResponse(response.statusCode, response.body);
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        return data.map((item) => Map<String, dynamic>.from(item)).toList();
+      } else {
+        throw Exception('Ошибка получения вопросов: ${response.body}');
+      }
+    } catch (e) {
+      print('Get questions error: $e');
+      final cachedData = await _getFromCache('questions');
+      if (cachedData != null) {
+        return List<Map<String, dynamic>>.from(cachedData);
+      }
       rethrow;
     }
   }

@@ -5,6 +5,8 @@ import 'package:path_provider/path_provider.dart';
 import 'package:protalk_frontend/services/api_service.dart';
 import 'package:protalk_frontend/services/auth_service.dart';
 import 'package:protalk_frontend/frames/login_screen.dart';
+import 'package:protalk_frontend/frames/onboarding_screens.dart';
+import 'package:protalk_frontend/styles/theme.dart';
 
 class UserScreen extends StatefulWidget {
   const UserScreen({super.key});
@@ -298,7 +300,7 @@ class _UserScreenState extends State<UserScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF3EFE9),
+      backgroundColor: AppTheme.backgroundColor,
       appBar: AppBar(
         automaticallyImplyLeading: false,
         title: const Text(
@@ -306,8 +308,8 @@ class _UserScreenState extends State<UserScreen> {
           style: TextStyle(fontFamily: 'Cuyabra'),
         ),
         centerTitle: true,
-        backgroundColor: const Color.fromARGB(80, 0, 0, 0),
-        elevation: 1,
+        backgroundColor: AppTheme.backgroundColor,
+        elevation: 0,
         actions: [
           IconButton(
             icon: Icon(_isEditing ? Icons.check : Icons.edit),
@@ -329,97 +331,85 @@ class _UserScreenState extends State<UserScreen> {
                       Text(_error!, style: const TextStyle(color: Colors.red)),
                 )
               : SingleChildScrollView(
+                  padding: const EdgeInsets.all(16.0),
                   child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      const SizedBox(height: 30),
                       GestureDetector(
                         onTap: _isEditing ? _pickAvatar : null,
                         child: _buildAvatar(),
                       ),
-                      const SizedBox(height: 20),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                        child: Column(
-                          children: [
-                            _buildEditableField(
-                              Icons.person,
-                              'Имя',
-                              _nameController,
-                            ),
-                            const SizedBox(height: 10),
-                            _buildEditableField(
-                              Icons.person,
-                              'Фамилия',
-                              _surnameController,
-                            ),
-                            const SizedBox(height: 10),
-                            _buildEditableField(
-                              Icons.person,
-                              'Отчество',
-                              _patronymicController,
-                            ),
-                            const SizedBox(height: 10),
-                            _buildEditableField(
-                              Icons.email,
-                              'Почта',
-                              _emailController,
-                              enabled: false,
-                            ),
-                            const SizedBox(height: 10),
-                            _buildEditableField(
-                              Icons.phone,
-                              'Телефон',
-                              _phoneController,
-                            ),
-                            const SizedBox(height: 10),
-                            _buildEditableField(
-                              Icons.calendar_today,
-                              'Дата рождения',
-                              _birthDateController,
-                            ),
-                            const SizedBox(height: 10),
-                            _buildEditableField(
-                              Icons.work,
-                              'Вакансия',
-                              _vacancyController,
-                            ),
-                            const SizedBox(height: 10),
-                            _buildEditableField(
-                              Icons.school,
-                              'Грейд',
-                              _gradeController,
-                            ),
-                            const SizedBox(height: 10),
-                            _buildEditableField(
-                              Icons.timeline,
-                              'Опыт работы',
-                              _experienceController,
-                            ),
-                            const SizedBox(height: 10),
-                            _buildEditableField(
-                              Icons.school,
-                              'Образование',
-                              _educationController,
-                            ),
-                            const SizedBox(height: 10),
-                            _buildEditableField(
-                              Icons.build,
-                              'Навыки',
-                              _skillsController,
-                            ),
-                            const SizedBox(height: 10),
-                            _buildEditableField(
-                              Icons.info,
-                              'О себе',
-                              _aboutController,
-                              maxLines: 3,
-                            ),
-                            const SizedBox(height: 30),
-                            _buildLogoutButton(),
-                            const SizedBox(height: 20),
-                          ],
+                      const SizedBox(height: 16.0),
+                      Text(
+                        '${_userProfile!['name']} ${_userProfile!['surname']}',
+                        style: const TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87,
                         ),
                       ),
+                      if (_userProfile!['patronymic'] != null)
+                        Text(
+                          _userProfile!['patronymic'],
+                          style: const TextStyle(
+                            fontSize: 18,
+                            color: Colors.black87,
+                          ),
+                        ),
+                      const SizedBox(height: 32.0),
+                      _buildInfoCard(
+                        'Основная вакансия',
+                        _userProfile!['vacancy'] ?? 'Не указана',
+                      ),
+                      const SizedBox(height: 16.0),
+                      _buildInfoCard(
+                        'Грейд',
+                        _userProfile!['grade'] ?? 'Не указан',
+                      ),
+                      const SizedBox(height: 16.0),
+                      _buildInfoCard(
+                        'Опыт работы',
+                        '${_userProfile!['experience'] ?? 0} лет',
+                      ),
+                      const SizedBox(height: 16.0),
+                      _buildInfoCard(
+                        'Телефон',
+                        _userProfile!['phone'] ?? 'Не указан',
+                      ),
+                      const SizedBox(height: 16.0),
+                      _buildInfoCard(
+                        'Email',
+                        _userProfile!['email'] ?? 'Не указан',
+                      ),
+                      const SizedBox(height: 32.0),
+                      Container(
+                        width: double.infinity,
+                        margin: const EdgeInsets.only(bottom: 20),
+                        child: ElevatedButton.icon(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => OnboardingScreens(
+                                  email: _userProfile!['email'] ?? '',
+                                  password: '',
+                                ),
+                              ),
+                            );
+                          },
+                          icon: const Icon(Icons.person_add),
+                          label: const Text('Заполнить профиль'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor:
+                                const Color.fromARGB(255, 127, 113, 179),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                        ),
+                      ),
+                      _buildLogoutButton(),
                     ],
                   ),
                 ),
@@ -428,8 +418,8 @@ class _UserScreenState extends State<UserScreen> {
 
   Widget _buildAvatar() {
     return CircleAvatar(
-      radius: 50,
-      backgroundColor: Colors.black45,
+      radius: 50.0,
+      backgroundColor: AppTheme.primaryColor,
       backgroundImage: _avatarFile != null ? FileImage(_avatarFile!) : null,
       child: _avatarFile == null
           ? const Icon(Icons.person, size: 50, color: Colors.white)
@@ -437,145 +427,45 @@ class _UserScreenState extends State<UserScreen> {
     );
   }
 
-  Widget _buildEditableField(
-    IconData icon,
-    String label,
-    TextEditingController controller, {
-    bool enabled = true,
-    int maxLines = 1,
-  }) {
-    if (label == 'Вакансия' && _isEditing) {
-      return Card(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        elevation: 2,
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: TextField(
-                decoration: InputDecoration(
-                  border: InputBorder.none,
-                  hintText: 'Поиск вакансии...',
-                  prefixIcon: const Icon(Icons.search, color: Colors.black54),
-                  suffixIcon: _searchQuery.isNotEmpty
-                      ? IconButton(
-                          icon: const Icon(Icons.clear),
-                          onPressed: () {
-                            setState(() {
-                              _searchQuery = '';
-                            });
-                          },
-                        )
-                      : null,
-                ),
-                onChanged: (value) {
-                  setState(() {
-                    _searchQuery = value;
-                  });
-                },
-              ),
-            ),
-            const Divider(height: 1),
-            SizedBox(
-              height: 300,
-              child: _searchQuery.isEmpty
-                  ? ListView.builder(
-                      itemCount: _itVacanciesByCategory.length,
-                      itemBuilder: (context, index) {
-                        final category =
-                            _itVacanciesByCategory.keys.elementAt(index);
-                        final vacancies = _itVacanciesByCategory[category]!;
-                        return Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Padding(
-                              padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-                              child: Text(
-                                category,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.black54,
-                                ),
-                              ),
-                            ),
-                            ...vacancies.map((vacancy) => ListTile(
-                                  title: Text(vacancy),
-                                  selected: controller.text == vacancy,
-                                  onTap: () {
-                                    controller.text = vacancy;
-                                    setState(() {});
-                                  },
-                                )),
-                            if (index < _itVacanciesByCategory.length - 1)
-                              const Divider(height: 1),
-                          ],
-                        );
-                      },
-                    )
-                  : ListView.builder(
-                      itemCount: _filteredVacancies.length,
-                      itemBuilder: (context, index) {
-                        final vacancy = _filteredVacancies[index];
-                        return ListTile(
-                          title: Text(vacancy),
-                          selected: controller.text == vacancy,
-                          onTap: () {
-                            controller.text = vacancy;
-                            setState(() {
-                              _searchQuery = '';
-                            });
-                          },
-                        );
-                      },
-                    ),
-            ),
-          ],
-        ),
-      );
-    }
-
-    if (label == 'Грейд' && _isEditing) {
-      return Card(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        elevation: 2,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0),
-          child: DropdownButtonFormField<String>(
-            value: controller.text.isEmpty ? null : controller.text,
-            decoration: InputDecoration(
-              border: InputBorder.none,
-              labelText: label,
-              prefixIcon: Icon(icon, color: Colors.black54),
-            ),
-            items: _grades.map((String grade) {
-              return DropdownMenuItem<String>(
-                value: grade,
-                child: Text(grade),
-              );
-            }).toList(),
-            onChanged: (String? newValue) {
-              if (newValue != null) {
-                controller.text = newValue;
-              }
-            },
+  Widget _buildInfoCard(String label, String value) {
+    return Container(
+      padding: const EdgeInsets.all(16.0),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.2),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
           ),
-        ),
-      );
-    }
-
-    return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      elevation: 2,
-      child: ListTile(
-        leading: Icon(icon, color: Colors.black54),
-        title: Text(label, style: const TextStyle(fontWeight: FontWeight.w500)),
-        subtitle: _isEditing && enabled
-            ? TextFormField(
-                controller: controller,
-                decoration: const InputDecoration(border: InputBorder.none),
-                maxLines: maxLines,
-              )
-            : Text(controller.text.isEmpty ? 'Не указано' : controller.text),
+        ],
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: Colors.black54,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  value,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    color: Colors.black87,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

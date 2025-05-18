@@ -1,260 +1,196 @@
 import 'package:flutter/material.dart';
+import '../services/api_service.dart';
+import '../styles/theme.dart';
 
 class InterviewScreen extends StatefulWidget {
-  const InterviewScreen({super.key});
+  const InterviewScreen({Key? key}) : super(key: key);
 
   @override
   State<InterviewScreen> createState() => _InterviewScreenState();
 }
 
 class _InterviewScreenState extends State<InterviewScreen> {
-  final TextEditingController _controller = TextEditingController();
-  final List<_Message> _messages = [];
+  final _apiService = ApiService();
+  String? _currentQuestion;
+  String? _userAnswer;
   bool _isLoading = false;
-  bool _isInterviewStarted = false;
-  String _interviewType = ''; // Тип собеседования (Soft или Hard skills)
-
-  void _sendMessage() async {
-    final text = _controller.text.trim();
-    if (text.isEmpty) return;
-
-    setState(() {
-      _messages.add(_Message(text: text, isUser: true));
-      _controller.clear();
-      _isLoading = true;
-    });
-
-    // TODO: Реальная интеграция с GPT API
-    await Future.delayed(const Duration(seconds: 2)); // имитация задержки
-    const aiResponse =
-        'Спасибо за ваш ответ! Расскажите подробнее о вашем опыте работы.';
-
-    setState(() {
-      _messages.add(_Message(text: aiResponse, isUser: false));
-      _isLoading = false;
-    });
-  }
-
-  void _startInterview(String type) {
-    setState(() {
-      _interviewType = type;
-      _isInterviewStarted = true;
-      _messages.clear();
-      _messages.add(
-        _Message(text: 'Вы начали собеседование по $type.', isUser: false),
-      );
-    });
-  }
-
-  void _goBackToSelection() {
-    setState(() {
-      _isInterviewStarted = false;
-      _interviewType = '';
-      _messages.clear();
-    });
-  }
+  int _timeLeft = 300; // 5 минут в секундах
+  bool _isTimerRunning = false;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFD9CCB7),
+      backgroundColor: AppTheme.backgroundColor,
       appBar: AppBar(
-        title: const Text(
-          'Собеседование',
-          style: TextStyle(
-            fontFamily: 'Cuyabra',
-          ),
-        ),
+        backgroundColor: AppTheme.backgroundColor,
+        elevation: 0,
+        title: const Text('Интервью'),
         centerTitle: true,
-        backgroundColor: const Color.fromARGB(255, 127, 113, 179),
-        elevation: 1,
-        leading: _isInterviewStarted
-            ? IconButton(
-                icon: const Icon(
-                  Icons.arrow_back,
-                  color: Color.fromARGB(255, 76, 72, 114),
-                ),
-                onPressed: _goBackToSelection,
-              )
-            : null,
-        iconTheme: const IconThemeData(color: Color.fromARGB(255, 76, 72, 114)),
       ),
-      body: Column(
-        children: [
-          if (!_isInterviewStarted)
-            Expanded(
-              child: Center(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      ElevatedButton(
-                        onPressed: () => _startInterview('Soft skills'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF7F71B3),
-                          minimumSize: const Size(double.infinity, 70),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          elevation: 6,
-                          shadowColor: Colors.black45,
-                        ),
-                        child: const Text(
-                          'Soft Skills',
-                          style: TextStyle(fontSize: 20, color: Colors.white),
-                        ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (_isTimerRunning)
+              Container(
+                padding: const EdgeInsets.all(16.0),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.grey.withOpacity(0.2),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.timer, color: AppTheme.primaryColor),
+                    const SizedBox(width: 8),
+                    Text(
+                      '${(_timeLeft ~/ 60).toString().padLeft(2, '0')}:${(_timeLeft % 60).toString().padLeft(2, '0')}',
+                      style: const TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black87,
                       ),
-                      const SizedBox(height: 16),
-                      ElevatedButton(
-                        onPressed: () => _startInterview('Hard skills'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF7F71B3),
-                          minimumSize: const Size(double.infinity, 70),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          elevation: 6,
-                          shadowColor: Colors.black45,
-                        ),
-                        child: const Text(
-                          'Hard Skills',
-                          style: TextStyle(fontSize: 20, color: Colors.white),
-                        ),
-                      ),
-                    ],
+                    ),
+                  ],
+                ),
+              ),
+            const SizedBox(height: 16.0),
+            if (_currentQuestion != null)
+              Container(
+                padding: const EdgeInsets.all(16.0),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.grey.withOpacity(0.2),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Text(
+                  _currentQuestion!,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    color: Colors.black87,
                   ),
                 ),
               ),
-            )
-          else
-            Expanded(
-              child: Column(
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Собеседование: $_interviewType',
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
+            const SizedBox(height: 16.0),
+            if (_currentQuestion != null)
+              Container(
+                padding: const EdgeInsets.all(16.0),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.grey.withOpacity(0.2),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
                     ),
+                  ],
+                ),
+                child: TextField(
+                  onChanged: (value) {
+                    setState(() {
+                      _userAnswer = value;
+                    });
+                  },
+                  maxLines: 5,
+                  decoration: AppTheme.textFieldDecoration.copyWith(
+                    hintText: 'Введите ваш ответ...',
                   ),
-                  Expanded(
-                    child: ListView.builder(
-                      padding: const EdgeInsets.all(16),
-                      itemCount: _messages.length,
-                      itemBuilder: (context, index) {
-                        final message = _messages[index];
-                        return Align(
-                          alignment: message.isUser
-                              ? Alignment.centerRight
-                              : Alignment.centerLeft,
-                          child: Container(
-                            margin: const EdgeInsets.symmetric(vertical: 4),
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 14,
-                              vertical: 10,
-                            ),
-                            constraints: BoxConstraints(
-                              maxWidth:
-                                  MediaQuery.of(context).size.width * 0.75,
-                            ),
-                            decoration: BoxDecoration(
-                              color: message.isUser
-                                  ? const Color.fromARGB(255, 127, 113, 179)
-                                  : Colors.white,
-                              borderRadius: BorderRadius.only(
-                                topLeft: const Radius.circular(16),
-                                topRight: const Radius.circular(16),
-                                bottomLeft: Radius.circular(
-                                  message.isUser ? 16 : 0,
-                                ),
-                                bottomRight: Radius.circular(
-                                  message.isUser ? 0 : 16,
-                                ),
-                              ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.grey.shade300,
-                                  blurRadius: 4,
-                                  offset: const Offset(0, 2),
-                                ),
-                              ],
-                            ),
-                            child: Text(
-                              message.text,
-                              style: TextStyle(
-                                color: message.isUser
-                                    ? Colors.white
-                                    : Colors.black87,
-                                fontSize: 16,
-                              ),
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                  if (_isLoading)
-                    const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 8),
-                      child: CircularProgressIndicator(),
-                    ),
-                  Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: TextField(
-                            controller: _controller,
-                            minLines: 1,
-                            maxLines: 5,
-                            decoration: InputDecoration(
-                              hintText: 'Введите ваш ответ...',
-                              filled: true,
-                              fillColor: Colors.white,
-                              contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 14,
-                              ),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(24),
-                                borderSide: BorderSide.none,
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        IconButton(
-                          onPressed: _sendMessage,
-                          icon: const Icon(
-                            Icons.send_rounded,
-                            color: Color.fromARGB(255, 76, 72, 114),
-                          ),
-                          tooltip: 'Отправить',
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+                ),
+              ),
+            const Spacer(),
+            SizedBox(
+              height: 48.0,
+              child: ElevatedButton(
+                onPressed: _isLoading ? null : _handleNextQuestion,
+                style: AppTheme.primaryButtonStyle,
+                child: _isLoading
+                    ? const CircularProgressIndicator()
+                    : Text(_currentQuestion == null
+                        ? 'Начать'
+                        : 'Следующий вопрос'),
               ),
             ),
-        ],
+          ],
+        ),
       ),
     );
   }
-}
 
-class _Message {
-  final String text;
-  final bool isUser;
+  Future<void> _handleNextQuestion() async {
+    if (_currentQuestion == null) {
+      // Начинаем интервью
+      setState(() {
+        _isLoading = true;
+        _isTimerRunning = true;
+      });
+      _startTimer();
+    } else {
+      // Отправляем ответ и получаем следующий вопрос
+      if (_userAnswer == null || _userAnswer!.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Пожалуйста, введите ответ'),
+            backgroundColor: AppTheme.errorColor,
+          ),
+        );
+        return;
+      }
+    }
 
-  _Message({required this.text, required this.isUser});
+    try {
+      final nextQuestion = await _apiService.getNextQuestion(_userAnswer);
+      setState(() {
+        _currentQuestion = nextQuestion;
+        _userAnswer = null;
+      });
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Ошибка: $e'),
+          backgroundColor: AppTheme.errorColor,
+        ),
+      );
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  void _startTimer() {
+    Future.delayed(const Duration(seconds: 1), () {
+      if (mounted && _isTimerRunning) {
+        setState(() {
+          if (_timeLeft > 0) {
+            _timeLeft--;
+            _startTimer();
+          } else {
+            _isTimerRunning = false;
+            // Завершаем интервью
+          }
+        });
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _isTimerRunning = false;
+    super.dispose();
+  }
 }

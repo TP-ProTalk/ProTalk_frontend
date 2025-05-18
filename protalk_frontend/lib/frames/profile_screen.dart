@@ -1,185 +1,171 @@
 import 'package:flutter/material.dart';
-import 'package:protalk_frontend/services/api_service.dart';
-import 'package:protalk_frontend/services/auth_service.dart';
-import 'package:protalk_frontend/frames/profile_update_screen.dart';
+import '../services/api_service.dart';
+import '../styles/theme.dart';
 
 class ProfileScreen extends StatefulWidget {
-  const ProfileScreen({super.key});
+  const ProfileScreen({Key? key}) : super(key: key);
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  final ApiService _apiService = ApiService();
-  bool _isLoading = true;
-  String? _error;
-  Map<String, dynamic>? _profile;
+  final _apiService = ApiService();
+  Map<String, dynamic>? _user;
+  bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
-    _loadProfile();
+    _loadUser();
   }
 
-  Future<void> _loadProfile() async {
+  Future<void> _loadUser() async {
+    setState(() {
+      _isLoading = true;
+    });
+
     try {
+      final user = await _apiService.getUser();
       setState(() {
-        _isLoading = true;
-        _error = null;
-      });
-
-      final token = await AuthService.getToken();
-      if (token == null) {
-        throw Exception('Требуется авторизация');
-      }
-
-      final profile = await _apiService.getUserProfile(token);
-
-      setState(() {
-        _profile = profile;
-        _isLoading = false;
+        _user = user;
       });
     } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Ошибка загрузки профиля: $e'),
+          backgroundColor: AppTheme.errorColor,
+        ),
+      );
+    } finally {
       setState(() {
-        _error = e.toString();
         _isLoading = false;
       });
     }
   }
 
-  void _restartOnboarding() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => const ProfileUpdateScreen(),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF3EFE9),
+      backgroundColor: AppTheme.backgroundColor,
       appBar: AppBar(
-        title: const Text(
-          'Профиль',
-          style: TextStyle(
-            fontFamily: 'Cuyabra',
-          ),
-        ),
+        backgroundColor: AppTheme.backgroundColor,
+        elevation: 0,
+        title: const Text('Профиль'),
         centerTitle: true,
-        backgroundColor: const Color.fromARGB(255, 127, 113, 179),
-        elevation: 1,
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : _error != null
-              ? Center(
-                  child:
-                      Text(_error!, style: const TextStyle(color: Colors.red)),
-                )
+          : _user == null
+              ? const Center(child: Text('Ошибка загрузки профиля'))
               : SingleChildScrollView(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(16.0),
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       Container(
-                        width: double.infinity,
-                        margin: const EdgeInsets.only(bottom: 20),
-                        child: ElevatedButton.icon(
-                          onPressed: _restartOnboarding,
-                          icon: const Icon(Icons.refresh),
-                          label: const Text('Перепройти онбординг'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor:
-                                const Color.fromARGB(255, 127, 113, 179),
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
+                        padding: const EdgeInsets.all(16.0),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.grey.withOpacity(0.2),
+                              blurRadius: 4,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          children: [
+                            CircleAvatar(
+                              radius: 50.0,
+                              backgroundColor:
+                                  AppTheme.primaryColor.withOpacity(0.1),
+                              child: Icon(
+                                Icons.person,
+                                size: 50.0,
+                                color: AppTheme.primaryColor,
+                              ),
+                            ),
+                            const SizedBox(height: 16.0),
+                            Text(
+                              _user!['name'],
+                              style: const TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black87,
+                              ),
+                            ),
+                            const SizedBox(height: 8.0),
+                            Text(
+                              _user!['email'],
+                              style: const TextStyle(
+                                fontSize: 16,
+                                color: Colors.black54,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 32.0),
+                      const Text(
+                        'Статистика',
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87,
+                        ),
+                      ),
+                      const SizedBox(height: 16.0),
+                      Container(
+                        padding: const EdgeInsets.all(16.0),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.grey.withOpacity(0.2),
+                              blurRadius: 4,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          children: [
+                            _buildStatItem(
+                              'Пройдено курсов',
+                              _user!['completedCourses'].toString(),
+                              Icons.school,
+                            ),
+                            const Divider(),
+                            _buildStatItem(
+                              'Пройдено тестов',
+                              _user!['completedTests'].toString(),
+                              Icons.quiz,
+                            ),
+                            const Divider(),
+                            _buildStatItem(
+                              'Средний балл',
+                              _user!['averageScore'].toString(),
+                              Icons.star,
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 32.0),
+                      SizedBox(
+                        height: 48.0,
+                        child: ElevatedButton(
+                          onPressed: () {
+                            // TODO: Выйти из аккаунта
+                          },
+                          style: AppTheme.primaryButtonStyle.copyWith(
+                            backgroundColor: MaterialStateProperty.all(
+                              AppTheme.errorColor,
                             ),
                           ),
-                        ),
-                      ),
-                      Card(
-                        child: Padding(
-                          padding: const EdgeInsets.all(16),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text(
-                                'Личная информация',
-                                style: TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              const SizedBox(height: 16),
-                              _buildInfoRow('Имя', _profile?['name'] ?? ''),
-                              _buildInfoRow(
-                                  'Фамилия', _profile?['surname'] ?? ''),
-                              _buildInfoRow(
-                                  'Отчество', _profile?['patronymic'] ?? ''),
-                              _buildInfoRow('Email', _profile?['email'] ?? ''),
-                              _buildInfoRow(
-                                  'Телефон', _profile?['phone'] ?? ''),
-                              _buildInfoRow('Дата рождения',
-                                  _profile?['birth_date'] ?? ''),
-                            ],
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      Card(
-                        child: Padding(
-                          padding: const EdgeInsets.all(16),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text(
-                                'Профессиональная информация',
-                                style: TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              const SizedBox(height: 16),
-                              _buildInfoRow('Основная вакансия',
-                                  _profile?['main_vacancy'] ?? ''),
-                              _buildInfoRow('Дополнительная вакансия 1',
-                                  _profile?['secondary_vacancy1'] ?? ''),
-                              _buildInfoRow('Дополнительная вакансия 2',
-                                  _profile?['secondary_vacancy2'] ?? ''),
-                              _buildInfoRow(
-                                  'Уровень', _profile?['grade'] ?? ''),
-                              _buildInfoRow('Опыт работы',
-                                  '${_profile?['experience'] ?? 0} лет'),
-                              _buildInfoRow(
-                                  'Образование', _profile?['education'] ?? ''),
-                            ],
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      Card(
-                        child: Padding(
-                          padding: const EdgeInsets.all(16),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text(
-                                'Дополнительная информация',
-                                style: TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              const SizedBox(height: 16),
-                              _buildInfoRow(
-                                  'Навыки', _profile?['skills'] ?? ''),
-                              _buildInfoRow('О себе', _profile?['about'] ?? ''),
-                            ],
-                          ),
+                          child: const Text('Выйти'),
                         ),
                       ),
                     ],
@@ -188,24 +174,33 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildInfoRow(String label, String value) {
+  Widget _buildStatItem(String title, String value, IconData icon) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(
-            width: 200,
+          Icon(
+            icon,
+            color: AppTheme.primaryColor,
+            size: 24.0,
+          ),
+          const SizedBox(width: 16.0),
+          Expanded(
             child: Text(
-              label,
+              title,
               style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                color: Colors.grey,
+                fontSize: 16,
+                color: Colors.black87,
               ),
             ),
           ),
-          Expanded(
-            child: Text(value),
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: Colors.black87,
+            ),
           ),
         ],
       ),
